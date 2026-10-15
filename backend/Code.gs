@@ -5,6 +5,7 @@ const FOLDER_ID = '1ouGXc0d-3iIANtWskI8l14NjLfAqjwhR';
 const HEADERS = ['編號','建立時間','請求ID','資料指紋','營隊ID','營隊名稱','方案ID','方案名稱','日期','費用','早托日期','孩子姓名','年級','學校','家長','電話','Email','緊急聯絡人','緊急電話','飲食過敏','備註','推薦人','經驗','組裝能力','同意版本','同意時間','戶外告知','處理狀態','家長信狀態','家長信次數','家長信時間','家長信錯誤','管理員信狀態','管理員信次數','管理員信時間','管理員信錯誤'];
 function setup(){
  const props=PropertiesService.getScriptProperties();
+ if(!props.getProperty('SENDER_EMAIL'))props.setProperty('SENDER_EMAIL','teacher_lu@creativstacks.info');
  let ss;if(props.getProperty('SHEET_ID'))ss=SpreadsheetApp.openById(props.getProperty('SHEET_ID'));
  else {ss=SpreadsheetApp.create('2027冬令營｜私人報名管理');DriveApp.getFileById(ss.getId()).moveTo(DriveApp.getFolderById(FOLDER_ID));props.setProperty('SHEET_ID',ss.getId());}
  let sheet=ss.getSheetByName('報名紀錄')||ss.insertSheet('報名紀錄');if(sheet.getLastRow()===0){sheet.appendRow(HEADERS);sheet.setFrozenRows(1);sheet.getRange(1,1,1,HEADERS.length).setFontWeight('bold');}
@@ -61,6 +62,7 @@ function processNotifications(){
  if(status==='寄送中'){sheet.getRange(i+1,col+1).setValue('待人工確認');continue;}
  if(status!=='待寄送'&&status!=='寄送失敗')continue;if(attempts>=3)continue;if(last&&Date.now()-new Date(last).getTime()<900000)continue;
  const recipient=kind==='parent'?String(r[16]).replace(/^'/,''):props.getProperty('ADMIN_EMAIL');if(!recipient){sheet.getRange(i+1,col+1,1,4).setValues([['待人工確認',attempts,new Date().toISOString(),'未設定管理員信箱']]);continue;}
+ const sender=props.getProperty('SENDER_EMAIL');if(!sender||Session.getEffectiveUser().getEmail().toLowerCase()!==sender.toLowerCase()){sheet.getRange(i+1,col+1,1,4).setValues([['待人工確認',attempts,new Date().toISOString(),'執行帳號與指定寄件信箱不符；停止寄送，請確認發信服務']]);continue;}
  if(MailApp.getRemainingDailyQuota()<1)return;
  sheet.getRange(i+1,col+1,1,4).setValues([['寄送中',attempts+1,new Date().toISOString(),'']]);SpreadsheetApp.flush();
  try{const body=kind==='parent'?`報名資料已收到（尚未保留名額）。\n編號：${r[0]}\n營隊：${r[5]}\n日期：${r[8]}\n方案：${r[7]}\n費用：NT$ ${r[9]}\n\n請加入 LINE https://lin.ee/NTY6jV8 ，告知孩子姓名與報名編號，由老師確認名額與繳費。完成繳費及教室確認後才算報名完成。`:`新報名：${r[0]}\n營隊：${r[5]}\n方案：${r[7]}\n請至私人管理表查看並聯絡家長：${SpreadsheetApp.openById(props.getProperty('SHEET_ID')).getUrl()}`;
