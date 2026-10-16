@@ -82,7 +82,7 @@ function parentReceipt_(r){
  const plan=CAMPS.find(c=>c.id===r[4])?.plans.find(p=>p.id===r[6]);
  const original=plan?plan.price+(clean(r[10])?clean(r[10]).split(',').length*100:0):Number(r[9]);
  const discount=Math.max(0,original-Number(r[9]));
- const discountNote=discount?'（已折抵早鳥課程費 NT$ '+discount+'）':'';
+ const discountNote=discount?'（已折抵早鳥優惠 NT$ '+discount+'）':'';
  const early=clean(r[10])||'未預約';
  const fields=[['孩子姓名',r[11]],['營隊',r[5]],['營隊日期',r[8]],['上課時間','09:00–16:00'],['報名方案',r[7]],['早托日期',early]];
  const rows=fields.map(([label,value])=>`<tr><td style="padding:12px 0;border-bottom:1px solid #e9edf1;color:#697586;width:96px;vertical-align:top;font-size:13px;">${label}</td><td style="padding:12px 0 12px 12px;border-bottom:1px solid #e9edf1;color:#233247;line-height:1.7;font-size:15px;overflow-wrap:anywhere;">${esc(value)}</td></tr>`).join('');
