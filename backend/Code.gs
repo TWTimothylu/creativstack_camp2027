@@ -29,7 +29,7 @@ function validate_(v){
  if(v.privacy!==true||v.rules!==true||(c.id==='rc'&&v.outdoor!==true))throw Error('請閱讀並確認必要事項');
  if(!Array.isArray(v.early)||new Set(v.early).size!==v.early.length||v.early.some(d=>!c.dates.includes(d)))throw Error('早托日期錯誤');
  const now=Utilities.formatDate(new Date(),'Asia/Taipei','yyyy-MM-dd');if(now>=c.dates[0])throw Error('本梯次已停止網路收件');
- return {c,p,total:p.price+v.early.length*100};
+ return {c,p,total:campTotal(p.price,v.early.length)};
 }
 function doPost(e){
  let lock,writing=false;
@@ -79,11 +79,15 @@ function parentReceipt_(r){
  const clean=v=>String(v==null?'':v).replace(/^'/,'');
  const esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money='NT$ '+Number(r[9]).toLocaleString('en-US');
+ const plan=CAMPS.find(c=>c.id===r[4])?.plans.find(p=>p.id===r[6]);
+ const original=plan?plan.price+(clean(r[10])?clean(r[10]).split(',').length*100:0):Number(r[9]);
+ const discount=Math.max(0,original-Number(r[9]));
+ const discountNote=discount?'（已折抵早鳥課程費 NT$ '+discount+'）':'';
  const early=clean(r[10])||'未預約';
  const fields=[['孩子姓名',r[11]],['營隊',r[5]],['營隊日期',r[8]],['上課時間','09:00–16:00'],['報名方案',r[7]],['早托日期',early]];
  const rows=fields.map(([label,value])=>`<tr><td style="padding:12px 0;border-bottom:1px solid #e9edf1;color:#697586;width:96px;vertical-align:top;font-size:13px;">${label}</td><td style="padding:12px 0 12px 12px;border-bottom:1px solid #e9edf1;color:#233247;line-height:1.7;font-size:15px;overflow-wrap:anywhere;">${esc(value)}</td></tr>`).join('');
  const lineMessage=`老師您好，我已填寫 2027 冬令營報名表，請協助確認報名狀態與繳費方式。\n報名編號：${clean(r[0])}\n孩子姓名：${clean(r[11])}\n營隊：${clean(r[5])}\n日期：${clean(r[8])}\n方案：${clean(r[7])}\n謝謝老師！`;
- const body=`${clean(r[14])} 您好：\n我們已收到 ${clean(r[11])} 的營隊報名資料。\n目前狀態：待確認名額與繳費（尚未保留名額）。\n報名編號：${clean(r[0])}\n${fields.map(([k,v])=>k+'：'+clean(v)).join('\n')}\n報名費用：${money}（含午餐與已選早托，晚托另計）\n\n下一步：請複製下方文字，加入 LINE https://lin.ee/NTY6jV8 後貼上並按「傳送」。只加入好友，老師無法主動與你對話；收到你的訊息後，才能核對報名狀態。\n\n--- 請複製以下文字 ---\n${lineMessage}\n--- 複製到此 ---\n\n老師將確認名額與繳費方式；完成繳費及教室確認後，才算報名完成。\n如需更正資料，請透過 LINE 聯絡，無需重複填表。\n\n創意方塊機器人教室\n台北市萬華區莒光路347巷20號1樓\nhttps://twtimothylu.github.io/creativstack_camp2027/`;
+ const body=`${clean(r[14])} 您好：\n我們已收到 ${clean(r[11])} 的營隊報名資料。\n目前狀態：待確認名額與繳費（尚未保留名額）。\n報名編號：${clean(r[0])}\n${fields.map(([k,v])=>k+'：'+clean(v)).join('\n')}\n報名費用：${money}${discountNote}（含午餐與已選早托，晚托另計）\n\n下一步：請複製下方文字，加入 LINE https://lin.ee/NTY6jV8 後貼上並按「傳送」。只加入好友，老師無法主動與你對話；收到你的訊息後，才能核對報名狀態。\n\n--- 請複製以下文字 ---\n${lineMessage}\n--- 複製到此 ---\n\n老師將確認名額與繳費方式；完成繳費及教室確認後，才算報名完成。\n如需更正資料，請透過 LINE 聯絡，無需重複填表。\n\n創意方塊機器人教室\n台北市萬華區莒光路347巷20號1樓\nhttps://twtimothylu.github.io/creativstack_camp2027/`;
  const htmlBody=`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f2f4f7;color:#233247;font-family:Arial,'Noto Sans TC','Microsoft JhengHei',sans-serif;">
  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">已收到您的營隊報名資料。請加入 LINE，確認名額與繳費。</div>
  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f7;"><tr><td align="center" style="padding:28px 12px;">
@@ -92,7 +96,7 @@ function parentReceipt_(r){
  <tr><td style="padding:30px 28px 20px;"><div style="font-size:12px;font-weight:bold;color:#a54a25;letter-spacing:1px;">報名資料收件通知</div><h1 style="margin:10px 0 20px;font-size:27px;line-height:1.45;color:#233247;">收到報名，期待一起探索。</h1><p style="margin:0;font-size:15px;line-height:1.9;">${esc(r[14])} 您好：<br>我們已收到 <strong>${esc(r[11])}</strong> 的營隊報名資料。請核對下方資訊，並完成下一步確認。</p></td></tr>
  <tr><td style="padding:0 28px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:16px 18px;background:#fff5eb;border-left:3px solid #bd5629;"><strong style="font-size:14px;color:#8b411f;">待確認名額與繳費</strong><div style="margin-top:5px;font-size:13px;color:#755a49;line-height:1.7;">此信表示資料已收件，尚未保留名額。完成繳費及教室確認後，才算報名完成。</div></td></tr></table></td></tr>
  <tr><td style="padding:0 28px;"><div style="font-size:12px;color:#697586;">報名編號</div><div style="margin:7px 0 16px;font-family:Consolas,monospace;font-size:20px;font-weight:bold;letter-spacing:1px;">${esc(r[0])}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
- <tr><td style="padding:20px 28px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:14px;color:#697586;">報名費用</td><td align="right" style="font-size:27px;font-weight:bold;color:#233247;">${esc(money)}</td></tr></table><p style="margin:8px 0 0;text-align:right;font-size:12px;line-height:1.7;color:#697586;">含午餐與已選早托，晚托另計</p></td></tr>
+ <tr><td style="padding:20px 28px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:14px;color:#697586;">報名費用</td><td align="right" style="font-size:27px;font-weight:bold;color:#233247;">${esc(money)}</td></tr></table><p style="margin:8px 0 0;text-align:right;font-size:12px;line-height:1.7;color:#697586;">${esc(discountNote)}<br>含午餐與已選早托，晚托另計</p></td></tr>
  <tr><td style="padding:26px 28px;background:#f8fafc;border-top:1px solid #e9edf1;"><h2 style="margin:0 0 12px;font-size:19px;">下一步，透過 LINE 完成確認</h2><p style="margin:0 0 20px;font-size:14px;line-height:1.9;color:#536174;"><strong>只加入好友，老師無法主動與你對話。</strong>請依序完成：① 複製下方文字 → ② 加入／開啟教室 LINE → ③ 貼上並按「傳送」。老師收到訊息後，才能核對孩子的報名狀態。</p><p style="margin:0 0 8px;font-size:13px;font-weight:bold;">請長按或選取下方整段文字複製：</p><div style="padding:18px;margin:0 0 20px;background:#ffffff;border:1px solid #ccd5df;border-radius:8px;font-size:14px;line-height:1.9;color:#233247;user-select:text;">${esc(lineMessage).replace(/\n/g,'<br>')}</div><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#ad4c25" style="border-radius:7px;"><a href="https://lin.ee/NTY6jV8" style="display:inline-block;padding:15px 24px;border:1px solid #ad4c25;border-radius:7px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">加入／開啟 LINE，貼上並傳送 →</a></td></tr></table><p style="margin:15px 0 0;font-size:12px;line-height:1.8;color:#697586;"><strong>複製或加入好友不會自動傳送訊息，請務必按「傳送」。</strong><br>若按鈕無法開啟，請點選 <a href="https://lin.ee/NTY6jV8" style="color:#ad4c25;">lin.ee/NTY6jV8</a><br>如需更正資料，請透過 LINE 聯絡，無需重複填表。</p></td></tr>
  <tr><td style="padding:23px 28px;border-top:1px solid #e9edf1;font-size:12px;line-height:1.9;color:#697586;"><strong style="color:#233247;">創意方塊機器人教室</strong><br>台北市萬華區莒光路347巷20號1樓<br><a href="https://twtimothylu.github.io/creativstack_camp2027/" style="color:#536174;">查看營隊課程</a> · <a href="https://maps.app.goo.gl/XbzyMSb3q2zswpJj8" style="color:#536174;">教室地圖</a></td></tr>
  </table><p style="margin:18px 0 0;font-size:11px;color:#8390a1;">讓好奇心，變成看得見的作品。</p></td></tr></table></body></html>`;
