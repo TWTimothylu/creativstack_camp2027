@@ -66,8 +66,34 @@ function processNotifications(){
  if(MailApp.getRemainingDailyQuota()<1)return;
  sheet.getRange(i+1,col+1,1,4).setValues([['寄送中',attempts+1,new Date().toISOString(),'']]);SpreadsheetApp.flush();
  try{const body=kind==='parent'?`報名資料已收到（尚未保留名額）。\n編號：${r[0]}\n營隊：${r[5]}\n日期：${r[8]}\n方案：${r[7]}\n費用：NT$ ${r[9]}\n\n請加入 LINE https://lin.ee/NTY6jV8 ，告知孩子姓名與報名編號，由老師確認名額與繳費。完成繳費及教室確認後才算報名完成。`:`新報名：${r[0]}\n營隊：${r[5]}\n方案：${r[7]}\n請至私人管理表查看並聯絡家長：${SpreadsheetApp.openById(props.getProperty('SHEET_ID')).getUrl()}`;
- MailApp.sendEmail({to:recipient,subject:'創意方塊冬令營｜'+r[0]+(kind==='parent'?' 收件通知':' 新報名'),body:body,name:'創意方塊機器人教室'});sheet.getRange(i+1,col+1).setValue('已交寄');
+ const message={to:recipient,subject:'創意方塊冬令營｜'+r[0]+(kind==='parent'?' 收件通知':' 新報名'),body:body,name:'創意方塊機器人教室'};
+ if(kind==='parent')Object.assign(message,parentReceipt_(r));
+ MailApp.sendEmail(message);sheet.getRange(i+1,col+1).setValue('已交寄');
  }catch(err){sheet.getRange(i+1,col+1).setValue('寄送失敗');sheet.getRange(i+1,col+4).setValue(safe_(String(err.message).slice(0,300)));}
  }}
  }finally{lock.releaseLock();}
+}
+
+/** Table layout and inline styles for email clients; escape every submitted value. */
+function parentReceipt_(r){
+ const clean=v=>String(v==null?'':v).replace(/^'/,'');
+ const esc=v=>clean(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const money='NT$ '+Number(r[9]).toLocaleString('en-US');
+ const early=clean(r[10])||'未預約';
+ const fields=[['孩子姓名',r[11]],['營隊',r[5]],['營隊日期',r[8]],['上課時間','09:00–16:00'],['報名方案',r[7]],['早托日期',early]];
+ const rows=fields.map(([label,value])=>`<tr><td style="padding:12px 0;border-bottom:1px solid #e9edf1;color:#697586;width:96px;vertical-align:top;font-size:13px;">${label}</td><td style="padding:12px 0 12px 12px;border-bottom:1px solid #e9edf1;color:#233247;line-height:1.7;font-size:15px;overflow-wrap:anywhere;">${esc(value)}</td></tr>`).join('');
+ const body=`${clean(r[14])} 您好：\n我們已收到 ${clean(r[11])} 的營隊報名資料。\n目前狀態：待確認名額與繳費（尚未保留名額）。\n報名編號：${clean(r[0])}\n${fields.map(([k,v])=>k+'：'+clean(v)).join('\n')}\n報名費用：${money}（含午餐與已選早托，晚托另計）\n\n下一步：加入 LINE https://lin.ee/NTY6jV8 ，提供孩子姓名與報名編號。老師將確認名額與繳費方式；完成繳費及教室確認後，才算報名完成。\n如需更正資料，請透過 LINE 聯絡，無需重複填表。\n\n創意方塊機器人教室\n台北市萬華區莒光路347巷20號1樓\nhttps://twtimothylu.github.io/creativstack_camp2027/`;
+ const htmlBody=`<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f2f4f7;color:#233247;font-family:Arial,'Noto Sans TC','Microsoft JhengHei',sans-serif;">
+ <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">已收到您的營隊報名資料。請加入 LINE，確認名額與繳費。</div>
+ <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f4f7;"><tr><td align="center" style="padding:28px 12px;">
+ <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e1e6ec;border-radius:16px;overflow:hidden;">
+ <tr><td style="padding:27px 28px;background:#233247;border-top:5px solid #bd5629;"><div style="font-size:21px;font-weight:bold;letter-spacing:2px;color:#ffffff;">創意方塊</div><div style="margin-top:7px;font-size:11px;letter-spacing:2px;color:#c8d1de;">CREATIVSTACK · WINTER CAMP 2027</div></td></tr>
+ <tr><td style="padding:30px 28px 20px;"><div style="font-size:12px;font-weight:bold;color:#a54a25;letter-spacing:1px;">報名資料收件通知</div><h1 style="margin:10px 0 20px;font-size:27px;line-height:1.45;color:#233247;">收到報名，期待一起探索。</h1><p style="margin:0;font-size:15px;line-height:1.9;">${esc(r[14])} 您好：<br>我們已收到 <strong>${esc(r[11])}</strong> 的營隊報名資料。請核對下方資訊，並完成下一步確認。</p></td></tr>
+ <tr><td style="padding:0 28px 24px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:16px 18px;background:#fff5eb;border-left:3px solid #bd5629;"><strong style="font-size:14px;color:#8b411f;">待確認名額與繳費</strong><div style="margin-top:5px;font-size:13px;color:#755a49;line-height:1.7;">此信表示資料已收件，尚未保留名額。完成繳費及教室確認後，才算報名完成。</div></td></tr></table></td></tr>
+ <tr><td style="padding:0 28px;"><div style="font-size:12px;color:#697586;">報名編號</div><div style="margin:7px 0 16px;font-family:Consolas,monospace;font-size:20px;font-weight:bold;letter-spacing:1px;">${esc(r[0])}</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr>
+ <tr><td style="padding:20px 28px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="font-size:14px;color:#697586;">報名費用</td><td align="right" style="font-size:27px;font-weight:bold;color:#233247;">${esc(money)}</td></tr></table><p style="margin:8px 0 0;text-align:right;font-size:12px;line-height:1.7;color:#697586;">含午餐與已選早托，晚托另計</p></td></tr>
+ <tr><td style="padding:26px 28px;background:#f8fafc;border-top:1px solid #e9edf1;"><h2 style="margin:0 0 12px;font-size:19px;">下一步，透過 LINE 完成確認</h2><p style="margin:0 0 20px;font-size:14px;line-height:1.9;color:#536174;">加入教室 LINE，提供<strong>孩子姓名與報名編號</strong>。老師將協助確認名額，並說明繳費方式。</p><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#ad4c25" style="border-radius:7px;"><a href="https://lin.ee/NTY6jV8" style="display:inline-block;padding:15px 24px;border:1px solid #ad4c25;border-radius:7px;color:#ffffff;font-size:15px;font-weight:bold;text-decoration:none;">加入 LINE，確認報名 →</a></td></tr></table><p style="margin:15px 0 0;font-size:12px;line-height:1.8;color:#697586;">若按鈕無法開啟，請點選 <a href="https://lin.ee/NTY6jV8" style="color:#ad4c25;">lin.ee/NTY6jV8</a><br>如需更正資料，請透過 LINE 聯絡，無需重複填表。</p></td></tr>
+ <tr><td style="padding:23px 28px;border-top:1px solid #e9edf1;font-size:12px;line-height:1.9;color:#697586;"><strong style="color:#233247;">創意方塊機器人教室</strong><br>台北市萬華區莒光路347巷20號1樓<br><a href="https://twtimothylu.github.io/creativstack_camp2027/" style="color:#536174;">查看營隊課程</a> · <a href="https://maps.app.goo.gl/XbzyMSb3q2zswpJj8" style="color:#536174;">教室地圖</a></td></tr>
+ </table><p style="margin:18px 0 0;font-size:11px;color:#8390a1;">讓好奇心，變成看得見的作品。</p></td></tr></table></body></html>`;
+ return {body,htmlBody};
 }
