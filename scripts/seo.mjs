@@ -1,0 +1,12 @@
+export const baseUrl='https://twtimothylu.github.io/creativstack_camp2027/';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function metadata(view,c){
+ const url=baseUrl+(view==='course'?`course-${c.id}.html`:view==='register'?'register.html':'');
+ const title=view==='home'?'2027 台北萬華國小冬令營｜樂高機器人・Scratch程式｜創意方塊':view==='course'?`2027 ${c.name}｜台北萬華冬令營｜創意方塊`:'2027 冬令營報名｜創意方塊機器人教室';
+ const description=view==='home'?'創意方塊機器人教室 2027 台北萬華國小冬令營：樂高科技遙控車、Scratch遊戲程式、小小樂高工程師。每班最多5人，含午餐，可早托晚托，查看日期、適合年級與報名費用。':view==='course'?`${c.name}，2027/${c.dateLabel}，${c.dates.length}天。${c.audience}。${c.intro}台北萬華創意方塊，每班最多5人，含午餐，可早托晚托。`:'填寫創意方塊2027冬令營報名資料，選擇營隊、方案與早托日期；送出後透過LINE確認名額與繳費。';
+ const image=baseUrl+'assets/'+(c?c.image:'class-960.webp');
+ const org={'@type':'EducationalOrganization','@id':baseUrl+'#organization',name:'創意方塊機器人教室',url:baseUrl,address:{'@type':'PostalAddress',streetAddress:'莒光路347巷20號1樓',addressLocality:'萬華區',addressRegion:'台北市',postalCode:'108',addressCountry:'TW'},sameAs:['https://lin.ee/NTY6jV8']};
+ const graph=[org,{'@type':'WebSite','@id':baseUrl+'#website',url:baseUrl,name:'創意方塊2027冬令營',inLanguage:'zh-Hant-TW',publisher:{'@id':org['@id']}}];
+ if(c)graph.push({'@type':'Course','@id':url+'#course',url,name:c.name,description:c.description, image,provider:{'@id':org['@id']},inLanguage:'zh-Hant-TW',hasCourseInstance:{'@type':'CourseInstance',courseMode:'onsite',startDate:c.dates[0]+'T09:00:00+08:00',endDate:c.dates.at(-1)+'T16:00:00+08:00',location:{'@type':'Place',name:org.name,address:org.address}}},{'@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'2027 台北萬華冬令營',item:baseUrl},{'@type':'ListItem',position:2,name:c.name,item:url}]});
+ return `<title>${esc(title)}</title><meta name="description" content="${esc(description)}"><link rel="canonical" href="${url}"><meta name="robots" content="${view==='register'?'noindex,follow':'index,follow,max-image-preview:large'}"><meta property="og:type" content="website"><meta property="og:locale" content="zh_TW"><meta property="og:site_name" content="創意方塊機器人教室"><meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:url" content="${url}"><meta property="og:image" content="${image}"><meta name="twitter:card" content="summary_large_image"><script type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@graph':graph}).replaceAll('<','\\u003c')}</script>`;
+}
