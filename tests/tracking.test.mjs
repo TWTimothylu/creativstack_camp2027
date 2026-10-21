@@ -8,7 +8,7 @@ const source = fs.readFileSync(new URL('../public/tracking.js', import.meta.url)
 function setup(id = '123456789012345', storageBlocked = false) {
   const scripts = [], data = new Map();
   const context = vm.createContext({config: {metaPixelId: id}, window: {},
-    document: {createElement: () => ({}), head: {appendChild: s => scripts.push(s)}},
+    document: {createElement: () => ({addEventListener: () => {}}), head: {appendChild: s => scripts.push(s)}},
     sessionStorage: {
       getItem: k => { if (storageBlocked) throw Error(); return data.get(k); },
       setItem: (k,v) => { if (storageBlocked) throw Error(); data.set(k,v); }
