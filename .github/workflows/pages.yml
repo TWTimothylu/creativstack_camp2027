@@ -1,4 +1,4 @@
-name: Deploy camp website
+name: Redirect legacy camp website
 on:
   push:
     branches: [main]
@@ -21,11 +21,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm test
-      - run: npm run build
+      - run: node --test tests/redirects.test.mjs
+      - run: node scripts/build-redirects.mjs
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: redirect-site
       - uses: actions/deploy-pages@v4
         id: deployment

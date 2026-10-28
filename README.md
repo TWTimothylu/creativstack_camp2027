@@ -1,3 +1,12 @@
+# 舊網址轉址專案
+
+2026-10-28 起，營隊內容統一在教室儲存庫 courses_introduction 的 camps/2027-winter 維護。
+新網址：https://twtimothylu.github.io/courses_introduction/camps/2027-winter/
+
+本儲存庫保留歷史；Pages 只發布 scripts/build-redirects.mjs 產生的 redirect-site，保留舊連結的 query 與 hash。不要在此更新營隊內容或重新發布原 dist。
+
+---
+
 # 創意方塊 2027 冬令營網站
 
 總覽、三個課程詳情頁與共用報名頁。原生 HTML/CSS/JS，無第三方前端套件。
