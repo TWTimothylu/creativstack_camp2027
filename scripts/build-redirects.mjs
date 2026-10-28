@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-const base='https://twtimothylu.github.io/courses_introduction/camps/2027-winter/';
+const base='https://www.creativstacks.info/camps/2027-winter/';
 const pages=['index.html','course-rc.html','course-scratch.html','course-essential.html','register.html'];
 fs.mkdirSync('redirect-site',{recursive:true});
 for(const page of [...pages,'404.html']){

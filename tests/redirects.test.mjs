@@ -10,7 +10,7 @@ test('legacy redirects preserve registration selections, ad parameters and secti
   const search='?camp=rc&plan=takehome&utm_source=facebook&fbclid=sample';
   let actual;const link={};
   vm.runInNewContext(html.match(/<script>(.*?)<\/script>/s)[1],{URL,window:{location:{search,hash:'#plans',replace:url=>actual=url}},document:{getElementById:()=>link}});
-  const expected='https://twtimothylu.github.io/courses_introduction/camps/2027-winter/'+(['index.html','404.html'].includes(file)?'':file)+search+'#plans';
+  const expected='https://www.creativstacks.info/camps/2027-winter/'+(['index.html','404.html'].includes(file)?'':file)+search+'#plans';
   assert.equal(actual,expected);assert.equal(link.href,expected);
   assert.ok(!html.includes('tracking.js'));assert.ok(!html.includes('http-equiv="refresh"'));
  }
